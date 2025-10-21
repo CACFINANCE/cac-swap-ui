@@ -213,9 +213,6 @@
 
     <div class="info-group">
       <h3>💱 Instant Swap</h3>
-      <p class="mini-text" style="background: rgba(239, 68, 68, 0.1); padding: 0.5rem; border-radius: 5px; border-left: 3px solid #ef4444;">
-        ⚠️ <strong>Demo Mode:</strong> Swap calculations shown below. Actual swaps require smart contract.
-      </p>
       
       <label for="swapFrom">Swap From:</label>
       <select id="swapFrom">
@@ -230,46 +227,36 @@
       </div>
 
       <label for="swapAmount">Amount to Swap:</label>
-      <input type="number" id="swapAmount" step="0.000001" placeholder="Enter amount to see calculation" />
+      <input type="number" id="swapAmount" step="0.000001" placeholder="Enter amount" />
 
       <div id="swapCalculation" style="margin-top: 1rem; padding: 0.75rem; background: rgba(147, 51, 234, 0.15); border-radius: 5px; border: 1px solid rgba(147, 51, 234, 0.3); display: none;">
         <h3 style="margin-top: 0; color: #a78bfa;">💡 Swap Calculation:</h3>
         <div id="calcDetails" style="font-size: 0.65rem; line-height: 1.6;"></div>
       </div>
 
-      <p class="mini-text" style="margin-top: 0.5rem;">Available Pool Liquidity: <span id="poolLiquidity">Contract required</span></p>
+      <p class="mini-text" style="margin-top: 0.5rem;">Available Pool Liquidity: <span id="poolLiquidity">Loading...</span></p>
 
-      <button id="swapBtn" disabled style="opacity: 0.5;">🔒 Awaiting Contract Deployment</button>
+      <button id="swapBtn">💱 Execute Swap</button>
     </div>
 
     <div class="info-group">
       <h1 style="font-size: 1.3em; margin-bottom: 1rem;">💰 Provide Liquidity (Earn Fees)</h1>
-      <p class="mini-text" style="background: rgba(239, 68, 68, 0.1); padding: 0.5rem; border-radius: 5px; border-left: 3px solid #ef4444;">
-        ⚠️ <strong>Demo Mode:</strong> Smart contract deployment required before pool participation is enabled.
-      </p>
       
       <p class="mini-text" style="background: rgba(147, 51, 234, 0.1); padding: 0.5rem; border-radius: 5px; margin-top: 0.5rem;">
         💡 <strong>Tip:</strong> You can provide USDC, CAC, or both! Each token earns 0.3% fees when matched.
       </p>
 
       <div style="margin-top: 1rem;">
-        <button id="approveUsdcBtn" disabled style="opacity: 0.5;">🔒 Approve USDC for →CAC Swaps</button>
+        <button id="approveUsdcBtn">🔓 Approve USDC for →CAC Swaps</button>
       </div>
 
       <div style="margin-top: 1rem;">
-        <button id="approveCacBtn" disabled style="opacity: 0.5;">🔒 Approve CAC for →USDC Swaps</button>
+        <button id="approveCacBtn">🔓 Approve CAC for →USDC Swaps</button>
       </div>
 
       <div style="margin-top: 1rem;">
-        <button id="approveBothBtn" disabled style="opacity: 0.5; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">🔒 Approve Both USDC & CAC</button>
+        <button id="approveBothBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">🔓 Approve Both USDC & CAC</button>
         <p class="mini-text" style="margin-top: 0.5rem;">Maximize earnings by providing liquidity for both directions!</p>
-      </div>
-      
-      <div id="yourOrders" style="margin-top: 1rem;">
-        <h3>Your Active Pool Orders</h3>
-        <div id="ordersList">
-          <p class="mini-text">Connect wallet to view orders</p>
-        </div>
       </div>
     </div>
 
@@ -277,8 +264,7 @@
       <h3>How It Works</h3>
       <p class="mini-text">
         <strong>📊 CAC Price:</strong> Fetched live from reserve API<br>
-        Current: <span id="currentPrice" style="color: #10b981; font-weight: 700;">Loading...</span> USDC per CAC<br>
-        <em style="opacity: 0.8;"></em><br><br>
+        Current: <span id="currentPrice" style="color: #10b981; font-weight: 700;">Loading...</span> USDC per CAC<br><br>
         
         <strong>💰 Flexible Liquidity Provision:</strong><br>
         • <strong>USDC Only:</strong> Approve USDC → Match CAC→USDC swaps<br>
@@ -306,9 +292,9 @@
       // ── Config ──────────────────────────────────────────────────────
       const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
       const CAC_ADDRESS = "0x50f3C527e5772BB24897591C20f7430ea8c34437";
-      const SWAP_POOL_CONTRACT = "0xEFF42F886ab8eAd4872E42F4d689a8d754915c5f"; // TODO: Deploy contract
-      const BACKEND_API = "https://your-backend.com/api"; // TODO: Backend endpoint
-      const PRICE_URL = "https://cac-reserve.onrender.com/api/update-price"; // ✅ Oracle price
+      const SWAP_POOL_CONTRACT = "0xEFF42F886ab8eAd4872E42F4d689a8d754915c5f";
+      const BACKEND_API = "http://localhost:3000/api"; // Change to your deployed backend
+      const PRICE_URL = "https://cac-reserve.onrender.com/api/update-price";
       
       const CHAIN_ID = 1;
       const USDC_DECIMALS = 6;
@@ -332,7 +318,6 @@
       const swapAmount = document.getElementById("swapAmount");
       const swapBtn = document.getElementById("swapBtn");
       const poolLiquidity = document.getElementById("poolLiquidity");
-      const ordersList = document.getElementById("ordersList");
       const liveCacPrice = document.getElementById("liveCacPrice");
       const priceSpinner = document.getElementById("priceSpinner");
       const swapCalculation = document.getElementById("swapCalculation");
@@ -344,6 +329,11 @@
         "function balanceOf(address) view returns (uint256)",
         "function allowance(address,address) view returns (uint256)",
         "function approve(address,uint256) returns (bool)"
+      ];
+
+      const SWAP_POOL_ABI = [
+        "function swapUsdcForCac(address lpProvider, uint256 usdcAmount, uint256 minCacAmount, uint256 lpFee, uint256 deadline, bytes32 salt, bytes signature) external",
+        "function swapCacForUsdc(address lpProvider, uint256 cacAmount, uint256 minUsdcAmount, uint256 lpFee, uint256 deadline, bytes32 salt, bytes signature) external"
       ];
 
       // ── Fetch CAC Live Price from Reserve API ──────────────────────
@@ -358,7 +348,6 @@
           
           const data = await res.json();
           
-          // API returns {"price":"4.703541"} - this is the official CAC price
           if (data.price !== undefined) {
             const newPrice = parseFloat(data.price);
             
@@ -369,17 +358,13 @@
             cacPrice = newPrice;
             liveCacPrice.innerText = cacPrice.toFixed(6);
             
-            // Also update the "How It Works" section price
             const currentPriceDisplay = document.getElementById("currentPrice");
             if (currentPriceDisplay) {
               currentPriceDisplay.innerText = cacPrice.toFixed(6);
             }
             
             console.log(`✅ CAC Price from Reserve: ${cacPrice} USDC`);
-            
-            // Update calculation if user has entered amount
             updateSwapCalculation();
-            
             priceSpinner.style.display = "none";
             
             return cacPrice;
@@ -406,7 +391,6 @@
         let html = '';
 
         if (fromTokenType === "USDC") {
-          // USDC → CAC swap calculation
           const step1 = amount / cacPrice;
           const protocolFee = step1 * SWAP_FEE;
           const afterProtocolFee = step1 - protocolFee;
@@ -425,7 +409,6 @@
             <p style="font-size: 0.75rem; color: #10b981;"><strong>✅ You Receive: ${finalReceived.toFixed(8)} CAC</strong></p>
           `;
         } else {
-          // CAC → USDC swap calculation
           const cacTransferFee = amount * CAC_TRANSFER_FEE;
           const cacAfterTransferFee = amount - cacTransferFee;
           const usdcValue = cacAfterTransferFee * cacPrice;
@@ -461,7 +444,6 @@
         updateSwapCalculation();
       };
 
-      // Update calculation on amount change
       swapAmount.oninput = updateSwapCalculation;
 
       // Connect Wallet
@@ -487,6 +469,7 @@
           
           await updateBalances();
           await fetchCacPrice();
+          await loadPoolStats();
           
         } catch (e) {
           console.error("Connect error:", e);
@@ -513,68 +496,227 @@
         }
       }
 
-      // Load Pool Liquidity (disabled in demo)
-      async function loadPoolLiquidity() {
-        poolLiquidity.innerText = "Smart contract required";
-      }
-
-      // Load Your Active Orders (disabled in demo)
-      async function loadYourOrders() {
-        if (!user) {
-          ordersList.innerHTML = '<p class="mini-text">Connect wallet to view orders</p>';
-          return;
+      // Load Pool Stats
+      async function loadPoolStats() {
+        try {
+          const res = await fetch(`${BACKEND_API}/pool-stats`);
+          const data = await res.json();
+          poolLiquidity.innerText = `${data.totalProviders} active LPs`;
+        } catch (e) {
+          console.error("Pool stats error:", e);
+          poolLiquidity.innerText = "Unable to load";
         }
-        
-        // Demo: Show example of multiple liquidity positions
-        ordersList.innerHTML = `
-          <p class="mini-text" style="color: #fbbf24;">⚠️ Contract deployment required to view pool orders</p>
-          <div style="margin-top: 0.5rem; opacity: 0.6;">
-            <p class="mini-text"><strong>Example Structure:</strong></p>
-            <div class="pool-order" style="margin-top: 0.5rem;">
-              <p><strong>USDC Pool Position</strong></p>
-              <p>Amount: 500 USDC</p>
-              <p>Status: Active ✅</p>
-              <p>Earned: 1.5 USDC</p>
-            </div>
-            <div class="pool-order" style="margin-top: 0.5rem;">
-              <p><strong>CAC Pool Position</strong></p>
-              <p>Amount: 100 CAC</p>
-              <p>Status: Active ✅</p>
-              <p>Earned: 0.3 CAC</p>
-            </div>
-          </div>
-        `;
       }
 
-      // Approve USDC for Pool (disabled in demo)
+      // Approve USDC for Pool
       approveUsdcBtn.onclick = async () => {
-        statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
-        statusEl.className = "status-warning";
+        try {
+          if (!user) {
+            statusEl.innerText = "Status: Please connect wallet first";
+            statusEl.className = "status-warning";
+            return;
+          }
+
+          statusEl.innerText = "Status: Approving USDC...";
+          statusEl.className = "status-warning";
+
+          const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
+          const tx = await usdcContract.approve(SWAP_POOL_CONTRACT, ethers.constants.MaxUint256);
+          
+          statusEl.innerText = "Status: Waiting for confirmation...";
+          await tx.wait();
+
+          // Register as LP
+          await fetch(`${BACKEND_API}/register-lp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: user, token: 'USDC' })
+          });
+
+          statusEl.innerText = "Status: ✅ USDC approved! You're now an LP";
+          statusEl.className = "status-success";
+        } catch (e) {
+          console.error("Approve error:", e);
+          statusEl.innerText = `Status: ❌ ${e.message}`;
+          statusEl.className = "status-error";
+        }
       };
 
-      // Approve CAC for Pool (disabled in demo)
+      // Approve CAC for Pool
       approveCacBtn.onclick = async () => {
-        statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
-        statusEl.className = "status-warning";
+        try {
+          if (!user) {
+            statusEl.innerText = "Status: Please connect wallet first";
+            statusEl.className = "status-warning";
+            return;
+          }
+
+          statusEl.innerText = "Status: Approving CAC...";
+          statusEl.className = "status-warning";
+
+          const cacContract = new ethers.Contract(CAC_ADDRESS, ERC20_ABI, signer);
+          const tx = await cacContract.approve(SWAP_POOL_CONTRACT, ethers.constants.MaxUint256);
+          
+          statusEl.innerText = "Status: Waiting for confirmation...";
+          await tx.wait();
+
+          // Register as LP
+          await fetch(`${BACKEND_API}/register-lp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: user, token: 'CAC' })
+          });
+
+          statusEl.innerText = "Status: ✅ CAC approved! You're now an LP";
+          statusEl.className = "status-success";
+        } catch (e) {
+          console.error("Approve error:", e);
+          statusEl.innerText = `Status: ❌ ${e.message}`;
+          statusEl.className = "status-error";
+        }
       };
 
-      // Approve Both for Pool (disabled in demo)
+      // Approve Both
       approveBothBtn.onclick = async () => {
-        statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
-        statusEl.className = "status-warning";
+        try {
+          if (!user) {
+            statusEl.innerText = "Status: Please connect wallet first";
+            statusEl.className = "status-warning";
+            return;
+          }
+
+          statusEl.innerText = "Status: Approving USDC...";
+          statusEl.className = "status-warning";
+
+          const usdcContract = new ethers.Contract(USDC_ADDRESS, ERC20_ABI, signer);
+          const tx1 = await usdcContract.approve(SWAP_POOL_CONTRACT, ethers.constants.MaxUint256);
+          await tx1.wait();
+
+          statusEl.innerText = "Status: Approving CAC...";
+          const cacContract = new ethers.Contract(CAC_ADDRESS, ERC20_ABI, signer);
+          const tx2 = await cacContract.approve(SWAP_POOL_CONTRACT, ethers.constants.MaxUint256);
+          await tx2.wait();
+
+          // Register as LP for both
+          await fetch(`${BACKEND_API}/register-lp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: user, token: 'BOTH' })
+          });
+
+          statusEl.innerText = "Status: ✅ Both approved! Maximum earning potential";
+          statusEl.className = "status-success";
+        } catch (e) {
+          console.error("Approve error:", e);
+          statusEl.innerText = `Status: ❌ ${e.message}`;
+          statusEl.className = "status-error";
+        }
       };
 
-      // Execute Swap (disabled in demo)
+      // Execute Swap
       swapBtn.onclick = async () => {
-        statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
-        statusEl.className = "status-warning";
+        try {
+          if (!user) {
+            statusEl.innerText = "Status: Please connect wallet first";
+            statusEl.className = "status-warning";
+            return;
+          }
+
+          const amount = parseFloat(swapAmount.value);
+          if (!amount || amount <= 0) {
+            statusEl.innerText = "Status: Please enter valid amount";
+            statusEl.className = "status-warning";
+            return;
+          }
+
+          statusEl.innerText = "Status: Getting swap quote...";
+          statusEl.className = "status-warning";
+
+          // Get quote from backend
+          const quoteRes = await fetch(`${BACKEND_API}/get-swap-quote`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              swapper: user,
+              swapFrom: swapFrom.value,
+              amount: amount.toString()
+            })
+          });
+
+          if (!quoteRes.ok) {
+            const error = await quoteRes.json();
+            throw new Error(error.error || 'Failed to get quote');
+          }
+
+          const quote = await quoteRes.json();
+          console.log("✅ Quote received:", quote);
+
+          // Approve token if needed
+          const tokenContract = new ethers.Contract(
+            quote.tokenIn,
+            ERC20_ABI,
+            signer
+          );
+
+          const allowance = await tokenContract.allowance(user, SWAP_POOL_CONTRACT);
+          const amountIn = ethers.BigNumber.from(quote.amountIn);
+
+          if (allowance.lt(amountIn)) {
+            statusEl.innerText = "Status: Approving token...";
+            const approveTx = await tokenContract.approve(SWAP_POOL_CONTRACT, ethers.constants.MaxUint256);
+            await approveTx.wait();
+          }
+
+          // Execute swap
+          statusEl.innerText = "Status: Executing swap...";
+          const swapContract = new ethers.Contract(SWAP_POOL_CONTRACT, SWAP_POOL_ABI, signer);
+
+          let tx;
+          if (swapFrom.value === "USDC") {
+            tx = await swapContract.swapUsdcForCac(
+              quote.lpProvider,
+              quote.amountIn,
+              quote.minAmountOut,
+              quote.lpFee,
+              quote.deadline,
+              quote.salt,
+              quote.signature
+            );
+          } else {
+            tx = await swapContract.swapCacForUsdc(
+              quote.lpProvider,
+              quote.amountIn,
+              quote.minAmountOut,
+              quote.lpFee,
+              quote.deadline,
+              quote.salt,
+              quote.signature
+            );
+          }
+
+          statusEl.innerText = "Status: Waiting for confirmation...";
+          await tx.wait();
+
+          statusEl.innerText = "Status: ✅ Swap successful!";
+          statusEl.className = "status-success";
+
+          // Update balances
+          await updateBalances();
+          swapAmount.value = "";
+          updateSwapCalculation();
+
+        } catch (e) {
+          console.error("Swap error:", e);
+          statusEl.innerText = `Status: ❌ ${e.message}`;
+          statusEl.className = "status-error";
+        }
       };
 
-      // Initialize - Start fetching price immediately
+      // Initialize
       fetchCacPrice();
-      setInterval(fetchCacPrice, 10000); // Update every 10 seconds even without wallet
+      setInterval(fetchCacPrice, 10000);
       
-      statusEl.innerText = "Connect wallet to start • Price fetched from oracle";
+      statusEl.innerText = "Connect wallet to start";
       statusEl.className = "status-warning";
     })();
   </script>

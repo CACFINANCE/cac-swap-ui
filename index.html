@@ -273,7 +273,9 @@
     <div class="info-group">
       <h3>How It Works</h3>
       <p class="mini-text">
-        <strong>Oracle Price:</strong> CAC price fetched from reserve API (currently: <span id="currentPrice">loading...</span> USDC)<br><br>
+        <strong>📊 CAC Price:</strong> Fetched live from reserve API<br>
+        Current: <span id="currentPrice" style="color: #10b981; font-weight: 700;">Loading...</span> USDC per CAC<br>
+        <em style="opacity: 0.8;">(Price auto-updates from reserve - no oracle needed)</em><br><br>
         <strong>⚠️ Important: CAC 1% Transfer Fee</strong><br>
         • All CAC transfers have 1% fee (built into token contract)<br>
         • When providing CAC: You approve 100, pool receives ~99<br>
@@ -359,6 +361,12 @@
             // Update timestamp
             const now = new Date();
             priceTimestamp.innerText = now.toLocaleTimeString();
+            
+            // Also update the "How It Works" section price
+            const currentPriceDisplay = document.getElementById("currentPrice");
+            if (currentPriceDisplay) {
+              currentPriceDisplay.innerText = cacPrice.toFixed(6);
+            }
             
             console.log(`✅ Live CAC Price: ${cacPrice} USDC (${now.toLocaleTimeString()})`);
             

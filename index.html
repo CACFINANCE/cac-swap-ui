@@ -217,16 +217,29 @@
         ⚠️ <strong>Demo Mode:</strong> Smart contract deployment required before pool participation is enabled.
       </p>
       
-      <label for="provideToken">Token to Provide:</label>
-      <select id="provideToken" disabled>
-        <option value="USDC">USDC → CAC Pool</option>
-        <option value="CAC">CAC → USDC Pool</option>
-      </select>
+      <p class="mini-text" style="background: rgba(147, 51, 234, 0.1); padding: 0.5rem; border-radius: 5px; margin-top: 0.5rem;">
+        💡 <strong>Tip:</strong> You can provide USDC, CAC, or both! Each token earns 0.3% fees when matched.
+      </p>
 
-      <label for="provideAmount">Amount:</label>
-      <input type="number" id="provideAmount" step="0.000001" placeholder="Enter amount" disabled />
+      <div style="margin-top: 1rem;">
+        <h3 style="font-size: 0.7em;">Provide USDC Liquidity</h3>
+        <label for="provideUsdcAmount">USDC Amount:</label>
+        <input type="number" id="provideUsdcAmount" step="0.000001" placeholder="Enter USDC amount" disabled />
+        <button id="approveUsdcBtn" disabled style="opacity: 0.5; margin-top: 0.5rem;">🔒 Approve USDC for Pool</button>
+      </div>
 
-      <button id="approvePoolBtn" disabled style="opacity: 0.5;">🔒 Awaiting Contract Deployment</button>
+      <div style="margin-top: 1rem;">
+        <h3 style="font-size: 0.7em;">Provide CAC Liquidity</h3>
+        <label for="provideCacAmount">CAC Amount:</label>
+        <input type="number" id="provideCacAmount" step="0.00000001" placeholder="Enter CAC amount" disabled />
+        <button id="approveCacBtn" disabled style="opacity: 0.5; margin-top: 0.5rem;">🔒 Approve CAC for Pool</button>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <h3 style="font-size: 0.7em;">Or Provide Both</h3>
+        <button id="approveBothBtn" disabled style="opacity: 0.5; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">🔒 Approve Both USDC & CAC</button>
+        <p class="mini-text" style="margin-top: 0.5rem;">Maximize earnings by providing liquidity for both directions!</p>
+      </div>
       
       <div id="yourOrders" style="margin-top: 1rem;">
         <h3>Your Active Pool Orders</h3>
@@ -273,13 +286,21 @@
         <strong>📊 CAC Price:</strong> Fetched live from reserve API<br>
         Current: <span id="currentPrice" style="color: #10b981; font-weight: 700;">Loading...</span> USDC per CAC<br>
         <em style="opacity: 0.8;">(Price auto-updates from reserve - no oracle needed)</em><br><br>
-        <strong>⚠️ Important: CAC 1% Transfer Fee</strong><br>
+        
+        <strong>💰 Flexible Liquidity Provision:</strong><br>
+        • <strong>USDC Only:</strong> Approve USDC → Match CAC→USDC swaps<br>
+        • <strong>CAC Only:</strong> Approve CAC → Match USDC→CAC swaps<br>
+        • <strong>Both Tokens:</strong> Approve both → Match swaps in both directions!<br>
+        • Each position earns 0.3% fee independently<br><br>
+        
+        <strong>⚠️ CAC 1% Transfer Fee:</strong><br>
         • All CAC transfers have 1% fee (built into token contract)<br>
         • When providing CAC: You approve 100, pool receives ~99<br>
         • When swapping CAC: Recipient gets amount minus 1% fee<br><br>
-        <strong>How Swaps Work:</strong><br>
-        1. <strong>Join Pool:</strong> Approve tokens (stay in your wallet)<br>
-        2. <strong>Auto-Match:</strong> When someone swaps, you're matched randomly<br>
+        
+        <strong>🔄 Swap Process:</strong><br>
+        1. <strong>Join Pool:</strong> Approve USDC and/or CAC (stays in your wallet)<br>
+        2. <strong>Auto-Match:</strong> Backend randomly selects you when someone swaps<br>
         3. <strong>Atomic Swap:</strong> Smart contract executes trustless exchange<br>
         4. <strong>Earn 0.3%:</strong> Get swap fee instantly as reward<br>
         5. <strong>Withdraw:</strong> Remove liquidity anytime
@@ -510,11 +531,42 @@
           ordersList.innerHTML = '<p class="mini-text">Connect wallet to view orders</p>';
           return;
         }
-        ordersList.innerHTML = '<p class="mini-text" style="color: #fbbf24;">⚠️ Contract deployment required to view pool orders</p>';
+        
+        // Demo: Show example of multiple liquidity positions
+        ordersList.innerHTML = `
+          <p class="mini-text" style="color: #fbbf24;">⚠️ Contract deployment required to view pool orders</p>
+          <div style="margin-top: 0.5rem; opacity: 0.6;">
+            <p class="mini-text"><strong>Example Structure:</strong></p>
+            <div class="pool-order" style="margin-top: 0.5rem;">
+              <p><strong>USDC Pool Position</strong></p>
+              <p>Amount: 500 USDC</p>
+              <p>Status: Active ✅</p>
+              <p>Earned: 1.5 USDC</p>
+            </div>
+            <div class="pool-order" style="margin-top: 0.5rem;">
+              <p><strong>CAC Pool Position</strong></p>
+              <p>Amount: 100 CAC</p>
+              <p>Status: Active ✅</p>
+              <p>Earned: 0.3 CAC</p>
+            </div>
+          </div>
+        `;
       }
 
-      // Approve & Join Pool (disabled in demo)
-      approvePoolBtn.onclick = async () => {
+      // Approve USDC for Pool (disabled in demo)
+      approveUsdcBtn.onclick = async () => {
+        statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
+        statusEl.className = "status-warning";
+      };
+
+      // Approve CAC for Pool (disabled in demo)
+      approveCacBtn.onclick = async () => {
+        statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
+        statusEl.className = "status-warning";
+      };
+
+      // Approve Both for Pool (disabled in demo)
+      approveBothBtn.onclick = async () => {
         statusEl.innerText = "Status: ⚠️ Smart contract must be deployed first";
         statusEl.className = "status-warning";
       };

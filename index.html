@@ -199,11 +199,8 @@
     <div class="info-group">
       <h3>📊 Live CAC Price</h3>
       <p style="font-size: 1.2em; font-weight: 700; color: #c084fc; margin: 0.5rem 0;">
-        1 CAC = <span id="liveCacPrice">Loading...</span> USDC
-      </p>
-      <p class="mini-text" style="color: #a78bfa;">
-        Price fetched from reserve: <span id="priceTimestamp">--:--:--</span><br>
-        Auto-refresh: Every 10 seconds
+        1 CAC = <span id="liveCacPrice">–</span> USDC
+        <span id="priceSpinner" class="spinner" style="display:none;"></span>
       </p>
     </div>
 
@@ -323,12 +320,11 @@
       const poolLiquidity = document.getElementById("poolLiquidity");
       const ordersList = document.getElementById("ordersList");
       const liveCacPrice = document.getElementById("liveCacPrice");
-      const priceTimestamp = document.getElementById("priceTimestamp");
+      const priceSpinner = document.getElementById("priceSpinner");
       const swapCalculation = document.getElementById("swapCalculation");
       const calcDetails = document.getElementById("calcDetails");
 
       let provider, signer, user, cacPrice;
-      let priceUpdateInterval;
 
       const ERC20_ABI = [
         "function balanceOf(address) view returns (uint256)",
@@ -339,6 +335,8 @@
       // ── Fetch CAC Live Price from Reserve API ──────────────────────
       async function fetchCacPrice() {
         try {
+          priceSpinner.style.display = "inline-block";
+          
           const res = await fetch(PRICE_URL, { cache: "no-store" });
           if (!res.ok) {
             throw new Error(`HTTP ${res.status}`);
@@ -346,7 +344,7 @@
           
           const data = await res.json();
           
-          // API returns {"price":"4.703541"}
+          // API returns {"price":"4.703541"} - this is the official CAC price
           if (data.price !== undefined) {
             const newPrice = parseFloat(data.price);
             
@@ -356,11 +354,6 @@
             
             cacPrice = newPrice;
             liveCacPrice.innerText = cacPrice.toFixed(6);
-            liveCacPrice.style.color = "#10b981"; // Green when updated
-            
-            // Update timestamp
-            const now = new Date();
-            priceTimestamp.innerText = now.toLocaleTimeString();
             
             // Also update the "How It Works" section price
             const currentPriceDisplay = document.getElementById("currentPrice");
@@ -368,14 +361,12 @@
               currentPriceDisplay.innerText = cacPrice.toFixed(6);
             }
             
-            console.log(`✅ Live CAC Price: ${cacPrice} USDC (${now.toLocaleTimeString()})`);
+            console.log(`✅ CAC Price from Reserve: ${cacPrice} USDC`);
             
             // Update calculation if user has entered amount
             updateSwapCalculation();
             
-            setTimeout(() => {
-              liveCacPrice.style.color = "#c084fc"; // Back to purple
-            }, 500);
+            priceSpinner.style.display = "none";
             
             return cacPrice;
           } else {
@@ -383,9 +374,8 @@
           }
         } catch (err) {
           console.error("❌ Price fetch error:", err);
-          liveCacPrice.innerText = "Error loading";
-          liveCacPrice.style.color = "#ef4444";
-          priceTimestamp.innerText = "Failed to fetch";
+          liveCacPrice.innerText = "Error";
+          priceSpinner.style.display = "none";
           return null;
         }
       }
@@ -411,9 +401,9 @@
           
           html = `
             <p><strong>Input:</strong> ${amount.toFixed(6)} USDC</p>
-            <p><strong>Oracle Price:</strong> 1 CAC = ${cacPrice.toFixed(6)} USDC</p>
+            <p><strong>Reserve Price:</strong> 1 CAC = ${cacPrice.toFixed(6)} USDC</p>
             <hr style="border: 0; border-top: 1px solid rgba(147, 51, 234, 0.3); margin: 0.5rem 0;">
-            <p>1️⃣ Convert at oracle: ${amount.toFixed(6)} ÷ ${cacPrice.toFixed(6)} = <strong>${step1.toFixed(8)} CAC</strong></p>
+            <p>1️⃣ Convert at reserve price: ${amount.toFixed(6)} ÷ ${cacPrice.toFixed(6)} = <strong>${step1.toFixed(8)} CAC</strong></p>
             <p>2️⃣ Protocol fee (0.3%): ${step1.toFixed(8)} × 0.003 = <strong>${protocolFee.toFixed(8)} CAC</strong> → LP earns this</p>
             <p>3️⃣ After protocol fee: ${step1.toFixed(8)} - ${protocolFee.toFixed(8)} = <strong>${afterProtocolFee.toFixed(8)} CAC</strong></p>
             <p>4️⃣ CAC transfer fee (1%): ${afterProtocolFee.toFixed(8)} × 0.01 = <strong>${cacTransferFee.toFixed(8)} CAC</strong> → Token fee</p>
@@ -430,11 +420,11 @@
           
           html = `
             <p><strong>Input:</strong> ${amount.toFixed(8)} CAC</p>
-            <p><strong>Oracle Price:</strong> 1 CAC = ${cacPrice.toFixed(6)} USDC</p>
+            <p><strong>Reserve Price:</strong> 1 CAC = ${cacPrice.toFixed(6)} USDC</p>
             <hr style="border: 0; border-top: 1px solid rgba(147, 51, 234, 0.3); margin: 0.5rem 0;">
             <p>1️⃣ CAC transfer fee (1%): ${amount.toFixed(8)} × 0.01 = <strong>${cacTransferFee.toFixed(8)} CAC</strong> → Token fee</p>
             <p>2️⃣ CAC received by LP: ${amount.toFixed(8)} - ${cacTransferFee.toFixed(8)} = <strong>${cacAfterTransferFee.toFixed(8)} CAC</strong></p>
-            <p>3️⃣ Convert at oracle: ${cacAfterTransferFee.toFixed(8)} × ${cacPrice.toFixed(6)} = <strong>${usdcValue.toFixed(6)} USDC</strong></p>
+            <p>3️⃣ Convert at reserve price: ${cacAfterTransferFee.toFixed(8)} × ${cacPrice.toFixed(6)} = <strong>${usdcValue.toFixed(6)} USDC</strong></p>
             <p>4️⃣ Protocol fee (0.3%): ${usdcValue.toFixed(6)} × 0.003 = <strong>${protocolFee.toFixed(6)} USDC</strong> → LP earns this</p>
             <hr style="border: 0; border-top: 1px solid rgba(147, 51, 234, 0.3); margin: 0.5rem 0;">
             <p style="font-size: 0.75rem; color: #10b981;"><strong>✅ You Receive: ${finalReceived.toFixed(6)} USDC</strong></p>
@@ -478,17 +468,11 @@
           user = await signer.getAddress();
           
           connectedEl.innerText = `Connected: ${user.slice(0, 6)}...${user.slice(-4)}`;
-          statusEl.innerText = "Status: Connected ✅ - Fetching live price...";
+          statusEl.innerText = "Status: Connected ✅";
           statusEl.className = "status-success";
           
           await updateBalances();
           await fetchCacPrice();
-          
-          // Start auto-refresh price every 10 seconds
-          if (priceUpdateInterval) clearInterval(priceUpdateInterval);
-          priceUpdateInterval = setInterval(fetchCacPrice, 10000);
-          
-          statusEl.innerText = "Status: Connected ✅ - Live price updating every 10s";
           
         } catch (e) {
           console.error("Connect error:", e);
